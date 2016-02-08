@@ -93,7 +93,7 @@ var conf = convict({
     },
     port: {
       doc: 'The port the server should bind',
-      default: 9999,
+      default: 25,
       format: 'port',
       env: 'PORT'
     },

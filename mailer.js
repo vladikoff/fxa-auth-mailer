@@ -301,7 +301,13 @@ module.exports = function (log) {
     })
   }
 
-  Mailer.prototype.verificationReminderEmail = function (message, type) {
+  Mailer.prototype.verificationReminderEmail = function (message, reminderType) {
+    // TODO: type is already in the message
+    var remTpl = 'verificationReminderFirstEmail'
+    if (reminderType == 'secondReminder') {
+      remTpl = 'verificationReminderSecondEmail'
+    }
+
     log.trace({ op: 'mailer.verificationReminderEmail', email: message.email, uid: message.uid })
     var query = {
       uid: message.uid,
@@ -324,7 +330,7 @@ module.exports = function (log) {
       // TODO: subject should be different
       subject: gettext('Verify your Firefox Account'),
       // TODO: should support different type or have a different method for the second email.
-      template: 'verificationReminderFirstEmail',
+      template: remTpl,
       templateValues: {
         email: message.email,
         link: link,

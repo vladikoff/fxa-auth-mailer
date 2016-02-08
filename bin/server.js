@@ -7,6 +7,7 @@ var config = require('../config')
 
 var log = require('../log')('server')
 var mailConfig = config.get('mail')
+var dbConfig = config.get('db')
 
 var P = require('bluebird')
 
@@ -15,6 +16,7 @@ var P = require('bluebird')
 var mailerLog = require('../log')('mailer')
 var legacyMailerLog = require('../legacy_log')(mailerLog)
 var Mailer = require('../mailer')(legacyMailerLog)
+var DB = require('../lib/db')()
 
 
 var verificationReminderConfig = config.get('verificationReminder')
@@ -28,16 +30,25 @@ P.all(
   )
   .spread(
     function (translator, templates) {
+      // configure the mailer
       var mailer = new Mailer(translator, templates, mailConfig)
+
       log.info('config', mailConfig)
       log.info('templates', Object.keys(templates))
+      // TODO: fix config below
+      log.info('db', config.get('httpdb'))
 
-      // Start verification reminder checking
-      if (verificationReminderConfig.enabled) {
-        new VerificationReminder(mailer)
-      } else {
-        log.info('init', 'verification reminders not enabled - shutting down gracefully')
-      }
+      // setup DB
+      return DB.connect(config.get('httpdb'))
+        .done(function (db) {
+          // Start verification reminder checking
+          if (verificationReminderConfig.enabled) {
+            new VerificationReminder(mailer, db)
+          } else {
+            log.info('init', 'verification reminders not enabled - shutting down gracefully')
+          }
+        })
+
     }
   )
   .catch(
